@@ -1,4 +1,6 @@
 # Initializing our blockchain list
+MINING_REWARD = 10
+
 genesis_block = {
     'previous_hash': '',
     'index': 0,
@@ -13,18 +15,22 @@ participants = {'Gon'}
 def hash_block(block):
     return '-'.join([str(block[key]) for key in block])
 
+
 def get_balance(participant):
-    tx_sender = [[tx['amount'] for tx in block['transactions'] if tx['sender'] == participant] for block in blockchain]
+    tx_sender = [[tx['amount'] for tx in block['transactions']
+                  if tx['sender'] == participant] for block in blockchain]
     amount_sent = 0
     for tx in tx_sender:
         if len(tx) > 0:
             amount_sent += tx[0]
-    tx_recipient = [[tx['amount'] for tx in block['transactions'] if tx['recipient'] == participant] for block in blockchain]
+    tx_recipient = [[tx['amount'] for tx in block['transactions']
+                     if tx['recipient'] == participant] for block in blockchain]
     amount_received = 0
     for tx in tx_recipient:
         if len(tx) > 0:
             amount_received += tx[0]
     return amount_received - amount_sent
+
 
 def get_last_blockchain_value():
     """ Returns the last value of the current blockchain """
@@ -53,7 +59,12 @@ def add_transaction(recipient, sender=owner, amount=1.0):
 def mine_block():
     last_block = blockchain[-1]
     hashed_blocked = hash_block(last_block)
-    print(hashed_blocked)
+    reward_transaction = {
+        'sender': 'MINING',
+        'recipient': owner,
+        'amount': MINING_REWARD
+    }
+    open_transactions.append(reward_transaction)
     block = {
         'previous_hash': hashed_blocked,
         'index': len(blockchain),
