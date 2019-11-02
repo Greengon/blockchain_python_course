@@ -1,14 +1,20 @@
+import functools
 # Initializing our blockchain list
 MINING_REWARD = 10
 
+# Our starting block for the blockchain
 genesis_block = {
     'previous_hash': '',
     'index': 0,
     'transactions': []
 }
+# Initializing our (empty) blockchain list
 blockchain = [genesis_block]
+# Unhandled transactions
 open_transactions = []
+# We are the owner of this blockchain node, hence this is our identifier
 owner = 'Gon'
+# Regisered paricipants: Ourself + other people sending/ receiving coins
 participants = {'Gon'}
 
 
@@ -21,16 +27,11 @@ def get_balance(participant):
                   if tx['sender'] == participant] for block in blockchain]
     open_tx_sender = [tx['amount'] for tx in open_transactions if tx['sender'] == participant]
     tx_sender.append(open_tx_sender)
-    amount_sent = 0
-    for tx in tx_sender:
-        if len(tx) > 0:
-            amount_sent += tx[0]
+    amount_sent = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_sender, 0)
     tx_recipient = [[tx['amount'] for tx in block['transactions']
                      if tx['recipient'] == participant] for block in blockchain]
-    amount_received = 0
-    for tx in tx_recipient:
-        if len(tx) > 0:
-            amount_received += tx[0]
+    amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_recipient, 0)
+    # Return the total balance
     return amount_received - amount_sent
 
 
@@ -173,7 +174,10 @@ while waiting_for_input:
     if not verify_chain():
         print_blockchain_elements()
         print('Invalid blockchain!')
+        # Break out of the loop
         break
-    print(get_balance('Gon'))
+    print('Balance of {}: {:6.2f}'.format('Gon', get_balance('Gon')))
+else:
+    print('User left!')
 
 print('Done')
