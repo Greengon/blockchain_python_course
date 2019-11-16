@@ -8,16 +8,8 @@ from hash_util import hash_string_256, hash_block
 
 # Initializing our blockchain list
 MINING_REWARD = 10
-
-# Our starting block for the blockchain
-genesis_block = {
-    'previous_hash': '',
-    'index': 0,
-    'transactions': [],
-    'proof': 100
-}
 # Initializing our (empty) blockchain list
-blockchain = [genesis_block]
+blockchain = []
 # Unhandled transactions
 open_transactions = []
 # We are the owner of this blockchain node, hence this is our identifier
@@ -26,21 +18,22 @@ owner = 'Gon'
 participants = {'Gon'}
 
 def load_data():
-    with open('blockchain.txt', mode='r') as f:
-        # file_content = pickle.loads(f.read())
-        file_content = f.readlines()
+    global blockchain
+    global open_transactions
+    try:
+        with open('blockchain.txt', mode='r') as f:
+            # file_content = pickle.loads(f.read())
+            file_content = f.readlines()
 
-        global blockchain
-        global open_transactions
-        # blockchain = file_content['chain']
-        # open_transactions = file_content['ot']
-        blockchain = json.loads(file_content[0][:-1])
-        update_blockchain = []
-        for block in blockchain:
-            update_block = {
-                'previous_hash': block['previous_hash'],
-                'index': block['index'],
-                'proof': block['proof'], 
+            # blockchain = file_content['chain']
+            # open_transactions = file_content['ot']
+            blockchain = json.loads(file_content[0][:-1])
+            update_blockchain = []
+            for block in blockchain:
+                update_block = {
+                    'previous_hash': block['previous_hash'],
+                    'index': block['index'],
+                    'proof': block['proof'], 
                 'transactions': [OrderedDict([('sender',tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])]) for tx in block['transactions']]
             }
             update_blockchain.append(update_block)
@@ -51,28 +44,54 @@ def load_data():
             update_transaction = OrderedDict([('sender',tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])]) 
             update_transactions.append(update_transaction)
         open_transactions = update_transactions
-
+    except IOError:
+        # Our starting block for the blockchain
+        genesis_block = {
+            'previous_hash': '',
+            'index': 0,
+            'transactions': [],
+            'proof': 100
+        }
+        # Initializing our (empty) blockchain list
+        blockchain = [genesis_block]
+        # Unhandled transactions
+        open_transactions = []
+    finally:
+        print('Cleanup!')
 
 
 load_data()
 
 
 def save_data():
-    with open('blockchain.txt',mode='w') as f:
-        f.write(json.dumps(blockchain))
-        f.write('\n')
-        f.write(json.dumps(open_transactions))
-        # save_data = {
-            # 'chain': blockchain,
-            # 'ot': open_transactions
-        # }
-        # f.write(pickle.dumps(save_data))
+    try:
+        with open('blockchain.txt',mode='w') as f:
+            f.write(json.dumps(blockchain))
+            f.write('\n')
+            f.write(json.dumps(open_transactions))
+            # save_data = {
+                # 'chain': blockchain,
+                # 'ot': open_transactions
+            # }
+            # f.write(pickle.dumps(save_data))
+    except IOError:
+        print('Saving failed!')
 
 def valid_proof(transactions, last_hash, proof):
+    """Validate a proof of work number and see if it solves the puzzle algorithm
+
+    Arguments:
+        :transactions: The transactions of the block for which the proof is calculated.
+        :last_hash: The previous block's hash which will be stored.
+        :proof: The proof number we're testing.
+    """
+    # Create a string with all the hash inputs
     guess = (str(transactions) + str(last_hash) + str(proof)).encode()
-    print(guess)
+    # Hash the string
+    # IMPORTANT: This is NOT the the same hash as will be stored int the previous block
     guess_hash = hash_string_256(guess)
-    print(guess_hash)
+    # Only a hash which starts with two zeros will return True.
+    # This condition is of course defined by you.
     return guess_hash[0:2] == '00'
 
 def proof_of_work():
